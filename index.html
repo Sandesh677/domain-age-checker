@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Age Checker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Domain Age Checker</h1>
+            <p class="subtitle">Discover the age of any domain</p>
+            
+            <form id="domainForm" class="form">
+                <div class="form-group">
+                    <input 
+                        type="text" 
+                        id="domainInput" 
+                        class="form-input" 
+                        placeholder="Enter domain (e.g., google.com)"
+                        required
+                    >
+                    <button type="submit" class="btn btn-primary">Check Age</button>
+                </div>
+            </form>
+
+            <div id="loadingSpinner" class="spinner hidden"></div>
+
+            <div id="result" class="result hidden">
+                <div class="result-content">
+                    <h2 id="resultDomain"></h2>
+                    <div class="result-grid">
+                        <div class="result-item">
+                            <label>Creation Date</label>
+                            <p id="creationDate"></p>
+                        </div>
+                        <div class="result-item">
+                            <label>Age (Days)</label>
+                            <p id="ageDays"></p>
+                        </div>
+                        <div class="result-item">
+                            <label>Age (Years)</label>
+                            <p id="ageYears"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="error" class="error hidden">
+                <p id="errorMessage"></p>
+            </div>
+
+            <div id="info" class="info">
+                <p>💡 WHOIS data may not be available for all domains</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
