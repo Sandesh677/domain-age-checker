@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
         hideResult();
 
         try {
-            const response = await fetch('/api/check-domain', {
+            const response = await fetch('https://domain-age-checker-6op1.onrender.com/api/check-domain', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
