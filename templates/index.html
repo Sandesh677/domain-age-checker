@@ -3,60 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domain Age Checker</title>
+
+    <!-- SEO Meta -->
+    <title>Free Domain Age Checker Tool | Check Domain Registration Date</title>
+    <meta name="description" content="Check domain age instantly. Find domain creation date, age in years and days using our free domain age checker tool.">
+    <meta name="keywords" content="domain age checker, check domain age, domain age tool, whois lookup, website age checker">
+    <meta name="author" content="DNS Intelligence">
+
+    <!-- Open Graph (for sharing) -->
+    <meta property="og:title" content="Domain Age Checker Tool">
+    <meta property="og:description" content="Check how old any domain is instantly.">
+    <meta property="og:type" content="website">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>Domain Age Checker</h1>
-            <p class="subtitle">Discover the age of any domain</p>
-            
-            <form id="domainForm" class="form">
-                <div class="form-group">
-                    <input 
-                        type="text" 
-                        id="domainInput" 
-                        class="form-input" 
-                        placeholder="Enter domain (e.g., google.com)"
-                        required
-                    >
-                    <button type="submit" class="btn btn-primary">Check Age</button>
+
+<header class="header">
+    <h1>Domain Age Checker</h1>
+    <p>Check the registration date and age of any domain instantly</p>
+</header>
+
+<main class="container">
+
+    <!-- Tool Card -->
+    <section class="card">
+        <h2>Check Domain Age</h2>
+
+        <form id="domainForm" class="form">
+            <input 
+                type="text" 
+                id="domainInput" 
+                placeholder="Enter domain (e.g., google.com)"
+                required
+            >
+            <button type="submit">Check Now</button>
+        </form>
+
+        <!-- Loading -->
+        <div id="loadingSpinner" class="spinner hidden"></div>
+
+        <!-- Result -->
+        <div id="result" class="result hidden">
+            <h3 id="resultDomain"></h3>
+
+            <div class="result-grid">
+                <div>
+                    <span>Creation Date</span>
+                    <p id="creationDate"></p>
                 </div>
-            </form>
-
-            <div id="loadingSpinner" class="spinner hidden"></div>
-
-            <div id="result" class="result hidden">
-                <div class="result-content">
-                    <h2 id="resultDomain"></h2>
-                    <div class="result-grid">
-                        <div class="result-item">
-                            <label>Creation Date</label>
-                            <p id="creationDate"></p>
-                        </div>
-                        <div class="result-item">
-                            <label>Age (Days)</label>
-                            <p id="ageDays"></p>
-                        </div>
-                        <div class="result-item">
-                            <label>Age (Years)</label>
-                            <p id="ageYears"></p>
-                        </div>
-                    </div>
+                <div>
+                    <span>Age (Days)</span>
+                    <p id="ageDays"></p>
                 </div>
-            </div>
-
-            <div id="error" class="error hidden">
-                <p id="errorMessage"></p>
-            </div>
-
-            <div id="info" class="info">
-                <p>💡 WHOIS data may not be available for all domains</p>
+                <div>
+                    <span>Age (Years)</span>
+                    <p id="ageYears"></p>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+        <!-- Error -->
+        <div id="error" class="error hidden">
+            <p id="errorMessage"></p>
+        </div>
+
+        <p class="note">⚠ WHOIS data may not be available for all domains</p>
+    </section>
+
+    <!-- SEO Content Section -->
+    <section class="content">
+        <h2>What is Domain Age?</h2>
+        <p>
+            Domain age refers to how long a domain name has been registered and active on the internet.
+            Older domains are often considered more trustworthy by search engines like Google.
+        </p>
+
+        <h2>Why Domain Age Matters?</h2>
+        <ul>
+            <li>✔ Helps evaluate website trust and authority</li>
+            <li>✔ Important for SEO ranking signals</li>
+            <li>✔ Useful for buying expired or old domains</li>
+        </ul>
+
+        <h2>How This Tool Works</h2>
+        <p>
+            This tool fetches WHOIS data of a domain and calculates the age based on its creation date.
+            You get accurate results in seconds.
+        </p>
+
+        <h2>Use Cases</h2>
+        <ul>
+            <li>Check competitor websites</li>
+            <li>Find expired domain opportunities</li>
+            <li>Analyze SEO strength</li>
+        </ul>
+    </section>
+
+</main>
+
+<footer class="footer">
+    <p>© 2026 DNS Intelligence Tool | Free SEO Tools</p>
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
 </body>
 </html>
+
