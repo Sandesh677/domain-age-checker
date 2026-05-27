@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Domain Age Checker - Home{% endblock %}
+
+{% block content %}
+<div class="search-section">
+    <form id="domainForm" onsubmit="handleSubmit(event)" novalidate>
+        <label class="input-label" for="domainInput">Domain name</label>
+        <div class="input-group">
+            <input 
+                type="text" 
+                id="domainInput" 
+                name="domain" 
+                placeholder="example.com"
+                required
+                autocomplete="off"
+                aria-describedby="domainHint"
+            >
+            <button type="submit" class="btn btn-primary" id="submitButton">Check domain</button>
+        </div>
+        <p id="domainHint" class="help-text">Enter a root domain without https:// or path, for example <strong>example.com</strong>.</p>
+        <div id="formError" class="field-error" aria-live="polite"></div>
+    </form>
+
+    <div class="support-card">
+        <h2>How it works</h2>
+        <p>Lookup a domain's registration age, status, and expiration details to understand whether it is established, new, or expiring soon.</p>
+    </div>
+</div>
+
+<div id="resultsContainer" style="display: none;" aria-live="polite">
+    <div id="loadingSpinner" class="spinner" style="display: none;">
+        <div class="spinner-circle"></div>
+        <p>Looking up domain details...</p>
+    </div>
+    
+    <div id="resultContent"></div>
+    <button type="button" class="btn btn-secondary" id="clearButton" style="display: none;" onclick="clearResults()">Check another domain</button>
+</div>
+
+<div id="errorContainer" style="display: none;" aria-live="assertive">
+    <div class="error-message">
+        <strong>Error:</strong>
+        <p id="errorMessage"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const submitButton = document.getElementById('submitButton');
+    const domainInput = document.getElementById('domainInput');
+    const formError = document.getElementById('formError');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const errorContainer = document.getElementById('errorContainer');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const resultContent = document.getElementById('resultContent');
+    const clearButton = document.getElementById('clearButton');
+
+    function handleSubmit(event) {
+        event.preventDefault();
+        clearFormError();
+
+        const domain = domainInput.value.trim();
+        if (!domain) {
+            showFormError('Please enter a domain name to check.');
+            return;
+        }
+
+        if (!isValidDomain(domain)) {
+            showFormError('Enter a valid domain name, for example example.com.');
+            return;
+        }
+
+        checkDomain(domain);
+    }
+
+    function isValidDomain(domain) {
+        const domainPattern = /^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/;
+        return domainPattern.test(domain);
+    }
+
+    function checkDomain(domain) {
+        resultsContainer.style.display = 'block';
+        errorContainer.style.display = 'none';
+        loadingSpinner.style.display = 'flex';
+        resultContent.innerHTML = '';
+        clearButton.style.display = 'none';
+        setButtonLoading(true);
+
+        fetch(`/check-domain?domain=${encodeURIComponent(domain)}`)
+            .then(async response => {
+                const data = await response.json();
+                setButtonLoading(false);
+                loadingSpinner.style.display = 'none';
+
+                if (!response.ok || data.error) {
+                    const message = data.error || 'Unable to fetch domain details. Try again later.';
+                    showError(message);
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                displayResults(data);
+            })
+            .catch(error => {
+                setButtonLoading(false);
+                loadingSpinner.style.display = 'none';
+                showError('Network error: Unable to fetch domain information.');
+                console.error('Fetch error:', error);
+            });
+    }
+
+    function displayResults(data) {
+        errorContainer.style.display = 'none';
+        clearButton.style.display = 'inline-flex';
+
+        const statusText = readableStatus(data.status);
+        const ageText = data.age || 'Unknown age';
+        const createdDate = data.created_date || 'N/A';
+        const expirationDate = data.expiration_date || 'N/A';
+        const registrar = data.registrar || 'Unknown registrar';
+        const remaining = data.expiration_remaining?.formatted || 'N/A';
+        const daysRemaining = data.expiration_remaining?.days_remaining;
+
+        const scoreSection = buildScoresSection(data.scores);
+        const scoreSummary = data.scores
+            ? `This domain has an opportunity score of ${data.scores.total_score}/100.`
+            : 'No score data is available for this domain.';
+
+        const html = `
+            <div class="results-grid">
+                <div class="card summary-card">
+                    <h2>Summary</h2>
+                    <div class="info-row">
+                        <span class="label">Domain</span>
+                        <span class="value">${escapeHtml(data.domain)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Status</span>
+                        <span class="value status-badge status-${escapeHtml(data.status)}">${escapeHtml(statusText)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Age</span>
+                        <span class="value">${escapeHtml(ageText)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Registrar</span>
+                        <span class="value">${escapeHtml(registrar)}</span>
+                    </div>
+                    <p class="result-note">${escapeHtml(scoreSummary)}</p>
+                </div>
+
+                <div class="card dates-card">
+                    <h2>Registration Dates</h2>
+                    <div class="info-row">
+                        <span class="label">Created</span>
+                        <span class="value">${escapeHtml(createdDate)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Expires</span>
+                        <span class="value">${escapeHtml(expirationDate)}</span>
+                    </div>
+                </div>
+
+                <div class="card age-card">
+                    <h2>Domain Age</h2>
+                    <div class="age-display">
+                        <p class="age-text">${escapeHtml(ageText)}</p>
+                    </div>
+                </div>
+
+                <div class="card expiration-card">
+                    <h2>Expiration Countdown</h2>
+                    <div class="expiration-display">
+                        <p class="expiration-text">${escapeHtml(remaining)}</p>
+                        <p class="expiration-days">
+                            Days remaining: ${daysRemaining !== null && daysRemaining !== undefined ? escapeHtml(String(daysRemaining)) : 'N/A'}
+                        </p>
+                    </div>
+                </div>
+
+                ${scoreSection}
+            </div>
+        `;
+
+        resultContent.innerHTML = html;
+    }
+
+    function buildScoresSection(scores) {
+        if (!scores || !scores.breakdown) {
+            return '';
+        }
+
+        const scorePercent = (scores.total_score / 100) * 100;
+        const scoreColor = scorePercent >= 70 ? 'excellent' : scorePercent >= 50 ? 'good' : scorePercent >= 30 ? 'fair' : 'poor';
+
+        const breakdownItems = [
+            { label: 'Length', value: scores.breakdown.length },
+            { label: 'Extension', value: scores.breakdown.extension },
+            { label: 'Brandability', value: scores.breakdown.brandability },
+            { label: 'Keywords', value: scores.breakdown.keywords },
+            { label: 'Age', value: scores.breakdown.age }
+        ].filter(item => item.value);
+
+        const breakdownHtml = breakdownItems.map(item => buildScoreItem(item)).join('');
+
+        return `
+            <div class="card scores-card">
+                <h2>Domain Opportunity Score</h2>
+                <div class="overall-score">
+                    <div class="score-display ${scoreColor}">
+                        <div class="score-number">${escapeHtml(String(scores.total_score))}</div>
+                        <div class="score-max">/ 100</div>
+                    </div>
+                    <div class="score-percentage" style="width: ${escapeHtml(String(scorePercent))}%;"></div>
+                </div>
+                <div class="scores-breakdown">
+                    ${breakdownHtml}
+                </div>
+            </div>
+        `;
+    }
+
+    function buildScoreItem(item) {
+        const score = item.value?.score ?? 0;
+        const max = item.value?.max ?? 100;
+        const percent = max > 0 ? (score / max) * 100 : 0;
+        const barColor = percent >= 80 ? '#4CAF50' :
+                         percent >= 60 ? '#F59E0B' :
+                         percent >= 40 ? '#F97316' :
+                         '#EF4444';
+
+        return `
+            <div class="score-item">
+                <div class="score-item-header">
+                    <span class="score-item-label">${escapeHtml(item.label)}</span>
+                    <span class="score-item-value">${escapeHtml(String(score))}/${escapeHtml(String(max))}</span>
+                </div>
+                <div class="score-bar-container">
+                    <div class="score-bar" style="width: ${escapeHtml(String(percent))}%; background-color: ${barColor};"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    function readableStatus(status) {
+        const map = {
+            active: 'Active',
+            expired: 'Expired',
+            not_found: 'Not found',
+            unknown: 'Unknown',
+            error: 'Error'
+        };
+        return map[status] || 'Unknown';
+    }
+
+    function showError(errorMessage) {
+        const errorMessageElement = document.getElementById('errorMessage');
+        errorMessageElement.textContent = errorMessage;
+        errorContainer.style.display = 'block';
+    }
+
+    function showFormError(message) {
+        formError.textContent = message;
+    }
+
+    function clearFormError() {
+        formError.textContent = '';
+        errorContainer.style.display = 'none';
+    }
+
+    function clearResults() {
+        resultContent.innerHTML = '';
+        resultsContainer.style.display = 'none';
+        clearButton.style.display = 'none';
+        domainInput.focus();
+    }
+
+    function setButtonLoading(isLoading) {
+        if (isLoading) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Checking...';
+        } else {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Check domain';
+        }
+    }
+
+    function escapeHtml(text) {
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text ? String(text).replace(/[&<>"']/g, m => map[m]) : '';
+    }
+
+    domainInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            handleSubmit(event);
+        }
+    });
+</script>
+{% endblock %}
